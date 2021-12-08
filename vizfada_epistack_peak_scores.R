@@ -24,6 +24,7 @@ make_commands <- function(species, epistack_path, data_dir) {
     ) |> unique()
 
     metatarget <- fread(file.path(PREFIX, species, "chipseq", "metadata", "metadata.tsv"), select = c("experiment_accession", "experiment_target"))
+    metatarget <- unique(metatarget)
 
     inputs <- list.files(file.path(PREFIX, species, "chipseq"), pattern = "^ERX")
 
@@ -47,8 +48,8 @@ make_commands <- function(species, epistack_path, data_dir) {
 
     walk(inputs, function(x) {
         # warnings are often because of pre-existing directories
-        suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", x, "epistack")))
-        suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", x, "epistack", "peaks")))
+        suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack")))
+        suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack", "peaks")))
     })
 
     commands <- with(dfc, paste0(
@@ -56,10 +57,9 @@ make_commands <- function(species, epistack_path, data_dir) {
         " -a ", file.path(PREFIX, species, "chipseq", input_id, "macs", "narrowPeak", peaks),
         " -b ", file.path(PREFIX, species, "chipseq", input_id, "bigwig", bound_bw),
         " -i ", file.path(PREFIX, species, "chipseq", input_id, "bigwig", input_bw),
-        " -p ", file.path(PREFIX, species, "chipseq", input_id, "epistack", "peaks", paste0(bound_id, ".png")),
-        # " -p ", file.path("~/mnt/inra_p/projets/vizfada/plots", paste0(bound_id, ".png")),
+        " -p ", file.path(PREFIX, species, "chipseq", "epistack", "peaks", paste0(bound_id, ".png")),
         " -t '", paste(experiment_target, "ChIP-seq in", cellType),
-        "' -r center -y 10 -z 5 -c 2 -v -g 5"
+        "' -r center -y 10 -z 5 -c 2 -v -g 5 -m 99999 -f ci95"
     ))
 
     commands
@@ -73,11 +73,12 @@ write_commands <- function(commands, species = "", by = 100) {
     for(i in seq_along(from)) {
         header <- c(
             "#!/bin/bash",
-            paste0("#SBATCH -J epistack_", species, "_", from[i]),
+            paste0("#SBATCH -J es_", species, "_", from[i]),
             paste0("#SBATCH -o epistack_", species, "_", from[i], ".out"),
-            "#SBATCH --mem=16G",
+            "#SBATCH --mem=40G",
             "#SBATCH -c 3",
-            "#SBACTH --mail-type=END,FAIL",
+            "#SBATCH --mail-type=END,FAIL",
+            "#SBATCH -t 05:00:00",
             "module purge",
             "module load system/R-4.1.1_gcc-9.3.0"
         )
@@ -94,5 +95,5 @@ write_commands <- function(commands, species = "", by = 100) {
 
 species <- "cow"
 cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX)
-write_commands(cowpeaks, species = "cow")
+write_commands(cowpeaks, species = "cow", by = 25)
 
