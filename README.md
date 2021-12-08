@@ -13,8 +13,9 @@ Generate epistack plots from processed FAANG data
 - open the `vizfada_epistack_peak_scores.R` script.
 - edit first lines (*paths* section) with the relevant paths.
 - run interactively the *paths* section, the *library loading* section, the *function definitions*, and check for errors.
-- run the *running functions* section for your species of interest. *Optional:* edit the `by = 100` parameter of the `write_commands()` function call according to your needs.
+- run the *running functions* section for your species of interest. *Optional:* edit the `by = 25` parameter of the `write_commands()` function call according to your needs.
 
 ### launching the commands
-- `sbatch epistack_cow_1.sh` on Genotoul
+- `sbatch epistack_cow_1.sh`, `sbatch epistack_cow_26.sh`, etc. on Genotoul
+- look at the log files and check carefully for errors (likely cause: out of memmory errors when peak lists / bigwig are too large. Book more memmory to fix!)
 
