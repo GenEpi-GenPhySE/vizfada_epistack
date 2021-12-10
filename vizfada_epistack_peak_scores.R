@@ -9,21 +9,25 @@ PREFIX <- "/work/lmorel/data"
 library(purrr)
 library(data.table)
 library(stringr)
+library(jsonlite)
 
 # function definitions ----------------
 make_commands <- function(species, epistack_path, data_dir) {
-    meta1 <- fread(file.path(PREFIX, species, paste0(species, "_matching_celltype.csv")))
-    meta2 <- fread(file.path(PREFIX, species, paste0(species, "_matching_specimen.csv")))
 
-    setnames(meta1, "cellType.text", "cellType")
-    setnames(meta2, "cellType.text", "cellType")
+    metapath <- list.files(
+        file.path(PREFIX, species, "chipseq", "metadata"),
+        pattern = "\\.tsv$", full.names = TRUE
+    )
+    if (length(metapath) != 1)
+        stop("more than one .tsv file found in chipseq/metadata")
 
-    metatissue <- rbind(
-        meta1[, c("accession_chip", "cellType")],
-        meta2[, c("accession_chip", "cellType")]
-    ) |> unique()
-
-    metatarget <- fread(file.path(PREFIX, species, "chipseq", "metadata", "metadata.tsv"), select = c("experiment_accession", "experiment_target"))
+    metatarget <- fread(metapath, select = c("accession", "cellType", "experiment"))
+    metatarget$cellType <- map_chr(metatarget$cellType, function(x) {
+        fromJSON(str_replace_all(x, "'", '"'))$text
+    })
+    metatarget$experiment <- map_chr(metatarget$experiment, function(x) {
+        fromJSON(str_replace_all(x, "'", '"'))$target
+    })
     metatarget <- unique(metatarget)
 
     inputs <- list.files(file.path(PREFIX, species, "chipseq"), pattern = "^ERX")
@@ -43,14 +47,12 @@ make_commands <- function(species, epistack_path, data_dir) {
     dfc$input_bw = paste0(dfc$input_id, "_R1.bigWig")
     dfc$bound_bw = paste0(dfc$bound_id, "_R1.bigWig")
 
-    dfc <- merge(dfc, metatarget, by.x = "bound_id", by.y = "experiment_accession", all.x = TRUE)
-    dfc <- merge(dfc, metatissue, by.x = "bound_id", by.y = "accession_chip"      , all.x = TRUE)
+    dfc <- merge(dfc, metatarget, by.x = "bound_id", by.y = "accession", all.x = TRUE)
 
-    walk(inputs, function(x) {
-        # warnings are often because of pre-existing directories
-        suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack")))
-        suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack", "peaks")))
-    })
+    # warnings are often because of pre-existing directories
+    suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack")))
+    suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack", "peaks")))
+
 
     commands <- with(dfc, paste0(
         "Rscript --vanilla ", EPISTACKPATH,
@@ -58,7 +60,7 @@ make_commands <- function(species, epistack_path, data_dir) {
         " -b ", file.path(PREFIX, species, "chipseq", input_id, "bigwig", bound_bw),
         " -i ", file.path(PREFIX, species, "chipseq", input_id, "bigwig", input_bw),
         " -p ", file.path(PREFIX, species, "chipseq", "epistack", "peaks", paste0(bound_id, ".png")),
-        " -t '", paste(experiment_target, "ChIP-seq in", cellType),
+        " -t '", paste(experiment, "ChIP-seq in", cellType),
         "' -r center -y 10 -z 5 -c 2 -v -g 5 -m 99999 -f ci95"
     ))
 
@@ -93,7 +95,16 @@ write_commands <- function(commands, species = "", by = 100) {
 
 # running functions ---------------
 
-species <- "cow"
-cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX)
-write_commands(cowpeaks, species = "cow", by = 25)
+# species <- "cow"
+# cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX)
+# write_commands(cowpeaks, species = "cow", by = 25)
+
+pigpeaks <- make_commands("pig", EPISTACKPATH, PREFIX)
+write_commands(pigpeaks, species = "pig", by = 25)
+
+chickpeaks <- make_commands("chicken", EPISTACKPATH, PREFIX)
+write_commands(chickpeaks, species = "chicken", by = 25)
+
+horsepeaks <- make_commands("horse", EPISTACKPATH, PREFIX)
+write_commands(horsepeaks, species = "horse", by = 25)
 
