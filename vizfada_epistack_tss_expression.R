@@ -1,5 +1,6 @@
 # paths: change accordingly ---------------
-BASEDIR <- "/work/lmorel/data"
+# BASEDIR <- "/work/lmorel/data"
+BASEDIR <- "/home/gdevailly/mnt/genotoul_lmoreldata"
 
 
 # library loading ----------
@@ -41,6 +42,7 @@ getTssCoordinates <- function(species, basedir) {
         ,
         c("chromosome_name", "median_tss", "strand", "ensembl_gene_id", "gene_biotype")
     ]
+    colnames(gene_starts) <- c("chr", "start", "strand", "gene_id", "gene_type")
 
     fwrite(
         gene_starts,
