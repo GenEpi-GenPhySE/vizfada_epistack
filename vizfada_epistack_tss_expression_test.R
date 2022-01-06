@@ -1,10 +1,18 @@
 opt <- list()
 opt$anchors <- "/work/lmorel/data/pig/chipseq/epistack/median_tss.tsv"
 opt$bound <- "/work/lmorel/data/pig/chipseq/ERX3212574/bigwig/ERX3212576_R1.bigWig"
-opt$input <- "/work/lmorel/data/pig/chipseq/ERX3212574/bigwig/ERX3212576_R1.bigWig"
+opt$input <- "/work/lmorel/data/pig/chipseq/ERX3212574/bigwig/ERX3212574_R1.bigWig"
 opt$scores <- "/work/lmorel/data/pig/rnaseq/salmon/ERX3212540/quant.genes.sf"
-opt$cpu <- 1L
-
+opt$cpu <- 2L
+opt$reference <- "start"
+opt$extend <- 2500L
+opt$group <- 5L
+opt$title <- "TSS sorted by expr"
+opt$xlabs <- c("-2.5kb", "TSS", "+2.5kb")
+opt$ylim <- 1
+opt$zlim <- 1
+opt$errortype <- "ci95"
+opt$png <- "~/work/epistack_test.png"
 
 # table(anchors$gene_type) |> sort(decreasing = T)
 #
