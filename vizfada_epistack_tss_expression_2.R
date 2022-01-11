@@ -11,16 +11,17 @@ library(data.table)
 library(stringr)
 library(jsonlite)
 
+
 # function definitions ----------------
 make_commands <- function(species, epistack_path, data_dir, write_meta_table = FALSE) {
-
+    
     metapath <- list.files(
         file.path(PREFIX, species, "chipseq", "metadata"),
         pattern = "\\.tsv$", full.names = TRUE
     )
     if (length(metapath) != 1)
         stop("more than one .tsv file found in chipseq/metadata")
-
+    
     metatarget <- fread(metapath, select = c("accession", "cellType", "experiment"))
     metatarget$cellType <- map_chr(metatarget$cellType, function(x) {
         fromJSON(str_replace_all(x, "'", '"'))$text
@@ -29,15 +30,15 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
         fromJSON(str_replace_all(x, "'", '"'))$target
     })
     metatarget <- unique(metatarget)
-
+    
     inputs <- list.files(file.path(PREFIX, species, "chipseq"), pattern = "^ERX")
-
+    
     peaks <- map(set_names(inputs), function(x)
         list.files(
             file.path(PREFIX, species, "chipseq", x, "macs", "narrowPeak"),
             pattern = "peaks.narrowPeak$"
         ))
-
+    
     dfc <- map_dfr(peaks, function(x) {
         data.table(
             bound_id = str_extract(x, "^[:alnum:]+"),
@@ -46,8 +47,12 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
     }, .id = "input_id")
     dfc$input_bw = paste0(dfc$input_id, "_R1.bigWig")
     dfc$bound_bw = paste0(dfc$bound_id, "_R1.bigWig")
-
+    
     dfc <- merge(dfc, metatarget, by.x = "bound_id", by.y = "accession", all.x = TRUE)
+    
+    expr1 <- fread(file.path(PREFIX, species, paste0(species, "_matching_specimen.csv")))
+    expr2 <- fread(file.path(PREFIX, species, paste0(species, "_matching_celltype.csv")))
+    
     
     if (write_meta_table) {
         dff <- dfc
@@ -60,12 +65,12 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
             sep = "\t"
         )
     }
-
+    
     # warnings are often because of pre-existing directories
     suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack")))
     suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack", "peaks")))
-
-
+    
+    
     commands <- with(dfc, paste0(
         "Rscript --vanilla ", EPISTACKPATH,
         " -a ", file.path(PREFIX, species, "chipseq", input_id, "macs", "narrowPeak", peaks),
@@ -75,48 +80,6 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
         " -t '", paste(experiment, "ChIP-seq in", cellType),
         "' -r center -y 10 -z 5 -c 2 -v -g 5 -m 99999 -f ci95"
     ))
-
+    
     commands
 }
-
-write_commands <- function(commands, species = "", by = 100) {
-    from <- seq(1, length(commands), by = by)
-    to <- from + by
-    to[length(to)] <- length(commands)
-
-    for(i in seq_along(from)) {
-        header <- c(
-            "#!/bin/bash",
-            paste0("#SBATCH -J es_", species, "_", from[i]),
-            paste0("#SBATCH -o epistack_", species, "_", from[i], ".out"),
-            "#SBATCH --mem=40G",
-            "#SBATCH -c 3",
-            "#SBATCH --mail-type=END,FAIL",
-            "#SBATCH -t 05:00:00",
-            "module purge",
-            "module load system/R-4.1.1_gcc-9.3.0"
-        )
-
-        write.table(
-            c(header, commands[seq(from[i], to[i], by = 1L)]),
-            file = paste0("epistack_", species, "_", from[i], ".sh"),
-            col.names = FALSE, row.names = FALSE, quote = FALSE
-        )
-    }
-}
-
-# running functions ---------------
-
-# species <- "cow"
-# cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX)
-# write_commands(cowpeaks, species = "cow", by = 25)
-
-pigpeaks <- make_commands("pig", EPISTACKPATH, PREFIX)
-write_commands(pigpeaks, species = "pig", by = 25)
-
-chickpeaks <- make_commands("chicken", EPISTACKPATH, PREFIX)
-write_commands(chickpeaks, species = "chicken", by = 25)
-
-horsepeaks <- make_commands("horse", EPISTACKPATH, PREFIX)
-write_commands(horsepeaks, species = "horse", by = 25)
-
