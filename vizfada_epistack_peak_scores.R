@@ -48,12 +48,19 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
     dfc$bound_bw = paste0(dfc$bound_id, "_R1.bigWig")
 
     dfc <- merge(dfc, metatarget, by.x = "bound_id", by.y = "accession", all.x = TRUE)
-    
+
     if (write_meta_table) {
         dff <- dfc
         colnames(dff) <- c("bound_id", "input_id", "anchors", "input_bw", "bound_bw", "cellType", "experiment")
         dff$anchor_type <- "peak centers"
+        dff$scores <- dff$anchors
+        dff$species <- species
         dff$png <- file.path(species, "chipseq", "epistack", "peaks", paste0(dff$bound_id, ".png"))
+        dff$notes <- ""
+        if(species == "chicken") {
+            # TODO if new annotations / pipeline version: check if still 0 peaks detected
+            dff[bound_id %in% c("ERX3783265", "ERX3783279"), "notes"] <- "No peaks detected."
+        }
         fwrite(
             dff,
             file = file.path(data_dir, species, "chipseq", "epistack", "list_of_plots_peaks.tsv"),
@@ -107,16 +114,16 @@ write_commands <- function(commands, species = "", by = 100) {
 
 # running functions ---------------
 
-# species <- "cow"
-# cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX)
+# TODO rerun when cow metadat are reformated
+# cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 # write_commands(cowpeaks, species = "cow", by = 25)
 
-pigpeaks <- make_commands("pig", EPISTACKPATH, PREFIX)
+pigpeaks <- make_commands("pig", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 write_commands(pigpeaks, species = "pig", by = 25)
 
-chickpeaks <- make_commands("chicken", EPISTACKPATH, PREFIX)
+chickpeaks <- make_commands("chicken", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 write_commands(chickpeaks, species = "chicken", by = 25)
 
-horsepeaks <- make_commands("horse", EPISTACKPATH, PREFIX)
+horsepeaks <- make_commands("horse", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 write_commands(horsepeaks, species = "horse", by = 25)
 
