@@ -14,7 +14,10 @@ library(data.table)
 getTssCoordinates <- function(species, basedir) {
     ensembl <- useEnsembl(biomart = "genes")
     pattern <- switch (species,
-        "pig" = "Sscrofa"
+        "pig" = "Sscrofa",
+        "chicken" = "ggallus",
+        "cow" = "btaurus",
+        "horse" = "ecaballus"
     )
     dataset <- searchDatasets(ensembl, pattern)
     if (nrow(dataset) != 1L) {
@@ -52,3 +55,6 @@ getTssCoordinates <- function(species, basedir) {
 }
 
 getTssCoordinates("pig", basedir = BASEDIR)
+getTssCoordinates("chicken", basedir = BASEDIR)
+getTssCoordinates("cow", basedir = BASEDIR)
+getTssCoordinates("horse", basedir = BASEDIR)

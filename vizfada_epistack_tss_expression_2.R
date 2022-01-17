@@ -16,8 +16,8 @@ library(jsonlite)
 make_commands <- function(species, epistack_path, data_dir, write_meta_table = FALSE) {
 
     metapath <- list.files(
-        file.path(PREFIX, species, "chipseq", "metadata"),
-        pattern = "\\.tsv$", full.names = TRUE
+        file.path(data_dir, species, "chipseq", "metadata"),
+        pattern = "chipseq\\.tsv$", full.names = TRUE
     )
     if (length(metapath) != 1)
         stop("more than one .tsv file found in chipseq/metadata")
@@ -31,11 +31,11 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
     })
     metatarget <- unique(metatarget)
 
-    inputs <- list.files(file.path(PREFIX, species, "chipseq"), pattern = "^ERX")
+    inputs <- list.files(file.path(data_dir, species, "chipseq"), pattern = "^ERX")
 
     peaks <- map(set_names(inputs), function(x)
         list.files(
-            file.path(PREFIX, species, "chipseq", x, "macs", "narrowPeak"),
+            file.path(data_dir, species, "chipseq", x, "macs", "narrowPeak"),
             pattern = "peaks.narrowPeak$"
         ))
 
@@ -52,9 +52,9 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
     colnames(dfc) <- c("bound_id", "input_id", "anchors", "input_bw", "bound_bw", "cellType", "experiment")
     dfc$anchors <- "median_tss.tsv"
 
-    expr1 <- fread(file.path(PREFIX, species, paste0(species, "_matching_specimen.csv")), select = c("accession_chip", "accession_rna"))
+    expr1 <- fread(file.path(data_dir, species, paste0(species, "_matching_specimen.csv")), select = c("accession_chip", "accession_rna"))
     expr1$notes <- "Same biosample"
-    expr2 <- fread(file.path(PREFIX, species, paste0(species, "_matching_celltype.csv")))
+    expr2 <- fread(file.path(data_dir, species, paste0(species, "_matching_celltype.csv")))
     expr2 <- expr2[order(accession_rna), ]
     expr2 <- unique(expr2, by = "accession_chip")[, c("accession_chip", "accession_rna")] # always the RNAseq with the earlier ERX id
     expr2$notes <- "Same cell type, distinct biosample"
@@ -93,7 +93,7 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
         " -i ", file.path(PREFIX, species, "chipseq", input_id, "bigwig", input_bw),
         " -p ", file.path(PREFIX, species, "chipseq", "epistack", "TSS", paste0(bound_id, ".png")),
         " -t '", paste(experiment, "ChIP-seq in", cellType),
-        "' -r start --xlabs='-2.5kb,TSS,+2.5kb' -y 10 -z 5 -c 2 -v -g 5 -m 99999 -f ci95"
+        "' -r start --xlabs='-2.5kb,TSS,+2.5kb' -y 4 -z 2 -c 2 -v -g 5 -m 99999 -f ci95"
     ))
 
     commands
@@ -109,7 +109,7 @@ write_commands <- function(commands, species = "", by = 100) {
             "#!/bin/bash",
             paste0("#SBATCH -J es_", species, "_", from[i]),
             paste0("#SBATCH -o epistack_", species, "_", from[i], ".out"),
-            "#SBATCH --mem=40G",
+            "#SBATCH --mem=30G",
             "#SBATCH -c 3",
             "#SBATCH --mail-type=END,FAIL",
             "#SBATCH -t 05:00:00",
@@ -130,3 +130,6 @@ write_commands <- function(commands, species = "", by = 100) {
 
 pigptss <- make_commands("pig", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 write_commands(pigptss, species = "pig", by = 25)
+
+cowtss <- make_commands("cow", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
+write_commands(cowtss, species = "cow", by = 25)

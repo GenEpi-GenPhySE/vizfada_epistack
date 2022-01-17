@@ -15,8 +15,8 @@ library(jsonlite)
 make_commands <- function(species, epistack_path, data_dir, write_meta_table = FALSE) {
 
     metapath <- list.files(
-        file.path(PREFIX, species, "chipseq", "metadata"),
-        pattern = "\\.tsv$", full.names = TRUE
+        file.path(data_dir, species, "chipseq", "metadata"),
+        pattern = "chipseq\\.tsv$", full.names = TRUE
     )
     if (length(metapath) != 1)
         stop("more than one .tsv file found in chipseq/metadata")
@@ -30,11 +30,11 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
     })
     metatarget <- unique(metatarget)
 
-    inputs <- list.files(file.path(PREFIX, species, "chipseq"), pattern = "^ERX")
+    inputs <- list.files(file.path(data_dir, species, "chipseq"), pattern = "^ERX")
 
     peaks <- map(set_names(inputs), function(x)
         list.files(
-            file.path(PREFIX, species, "chipseq", x, "macs", "narrowPeak"),
+            file.path(data_dir, species, "chipseq", x, "macs", "narrowPeak"),
             pattern = "peaks.narrowPeak$"
         ))
 
@@ -115,8 +115,8 @@ write_commands <- function(commands, species = "", by = 100) {
 # running functions ---------------
 
 # TODO rerun when cow metadat are reformated
-# cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
-# write_commands(cowpeaks, species = "cow", by = 25)
+cowpeaks <- make_commands("cow", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
+write_commands(cowpeaks, species = "cow", by = 25)
 
 pigpeaks <- make_commands("pig", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 write_commands(pigpeaks, species = "pig", by = 25)
