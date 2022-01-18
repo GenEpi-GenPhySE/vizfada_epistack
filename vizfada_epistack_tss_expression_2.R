@@ -133,3 +133,9 @@ write_commands(pigptss, species = "pig", by = 25)
 
 cowtss <- make_commands("cow", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 write_commands(cowtss, species = "cow", by = 25)
+
+horsetss <- make_commands("horse", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
+write_commands(horsetss, species = "horse", by = 25)
+
+chicktss <- make_commands("chicken", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
+write_commands(chicktss, species = "chicken", by = 25)
