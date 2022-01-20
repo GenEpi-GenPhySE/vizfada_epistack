@@ -1,6 +1,7 @@
 # paths: change accordingly ---------------
 # BASEDIR <- "/work/lmorel/data"
-BASEDIR <- "/home/gdevailly/mnt/genotoul_lmoreldata"
+
+BASEDIR <- "/home/gdevailly/mnt/genotoul_lmorel/data"
 
 
 # library loading ----------
@@ -17,7 +18,8 @@ getTssCoordinates <- function(species, basedir) {
         "pig" = "Sscrofa",
         "chicken" = "ggallus",
         "cow" = "btaurus",
-        "horse" = "ecaballus"
+        "horse" = "ecaballus",
+        "sheep" = "oaries"
     )
     dataset <- searchDatasets(ensembl, pattern)
     if (nrow(dataset) != 1L) {
@@ -58,3 +60,4 @@ getTssCoordinates("pig", basedir = BASEDIR)
 getTssCoordinates("chicken", basedir = BASEDIR)
 getTssCoordinates("cow", basedir = BASEDIR)
 getTssCoordinates("horse", basedir = BASEDIR)
+getTssCoordinates("sheep", basedir = BASEDIR)

@@ -49,6 +49,10 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
 
     dfc <- merge(dfc, metatarget, by.x = "bound_id", by.y = "accession", all.x = TRUE)
 
+    # warnings are often because of pre-existing directories
+    suppressWarnings(dir.create(file.path(data_dir, species, "chipseq", "epistack")))
+    suppressWarnings(dir.create(file.path(data_dir, species, "chipseq", "epistack", "peaks")))
+    
     if (write_meta_table) {
         dff <- dfc
         colnames(dff) <- c("bound_id", "input_id", "anchors", "input_bw", "bound_bw", "cellType", "experiment")
@@ -68,17 +72,12 @@ make_commands <- function(species, epistack_path, data_dir, write_meta_table = F
         )
     }
 
-    # warnings are often because of pre-existing directories
-    suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack")))
-    suppressWarnings(dir.create(file.path(PREFIX, species, "chipseq", "epistack", "peaks")))
-
-
     commands <- with(dfc, paste0(
         "Rscript --vanilla ", EPISTACKPATH,
-        " -a ", file.path(PREFIX, species, "chipseq", input_id, "macs", "narrowPeak", peaks),
-        " -b ", file.path(PREFIX, species, "chipseq", input_id, "bigwig", bound_bw),
-        " -i ", file.path(PREFIX, species, "chipseq", input_id, "bigwig", input_bw),
-        " -p ", file.path(PREFIX, species, "chipseq", "epistack", "peaks", paste0(bound_id, ".png")),
+        " -a ", file.path(data_dir, species, "chipseq", input_id, "macs", "narrowPeak", peaks),
+        " -b ", file.path(data_dir, species, "chipseq", input_id, "bigwig", bound_bw),
+        " -i ", file.path(data_dir, species, "chipseq", input_id, "bigwig", input_bw),
+        " -p ", file.path(data_dir, species, "chipseq", "epistack", "peaks", paste0(bound_id, ".png")),
         " -t '", paste(experiment, "ChIP-seq in", cellType),
         "' -r center -y 10 -z 5 -c 2 -v -g 5 -m 99999 -f ci95"
     ))
@@ -126,4 +125,7 @@ write_commands(chickpeaks, species = "chicken", by = 25)
 
 horsepeaks <- make_commands("horse", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
 write_commands(horsepeaks, species = "horse", by = 25)
+
+sheeppeaks <- make_commands("sheep", EPISTACKPATH, PREFIX, write_meta_table = TRUE)
+write_commands(sheeppeaks, species = "sheep", by = 25)
 
